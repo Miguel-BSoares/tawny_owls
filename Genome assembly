@@ -1,0 +1,15 @@
+####All analyses were run in a HPC environment @CSC – IT Center for Science, Finland####
+####Different assemblies were produce by switching -m in flye
+####Comparisons were performed with Quast that also computes BUSCO.
+
+####################################
+##alignment of raw reads (sub-reads)
+flye --pacbio-raw owl_data/pacbio.V5A.subreads.fastq.gz --out-dir v5_flye_2 --resume -m 1000 --genome-size 1g --asm-coverage 20 --threads 4
+
+#polishing assembly
+pbmm2 index flye_assemblies/flye_v6_assembly_2_1000.fasta pbmm2_v6_flye_2_1000/v6_flye_2_1000_assembly.mmi
+pbmm2 align --sort --log-level DEBUG pbmm2_v6_flye_2_1000/v6_flye_2_1000_assembly.mmi owl_data/m64048_210523_061850.subreads.bam pbmm2_v6_flye_2_1000/v6_flye_2_1000.bam
+gcpp pbmm2_v5_flye/v5_flye.bam -r flye_assemblies/v5_flye_assembly.fasta -o v5_flye_polished/v5_flye_polished.fasta --algorithm=arrow -j 20
+
+#comparison and BUSCO
+quast.py flye_assemblies/polished/*fasta --output-dir quast_flye_polished -k -b -e -f --eukaryote --large --est-ref-size 1 --threads 4
