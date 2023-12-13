@@ -8,7 +8,7 @@
 ####samtools/1.7
 ####stacks/2.65
 #alignment
-files=" "
+files="JUST PREFIX FILE NAME"
 for sample in $files
 do
         bwa-mem2 mem -t 10 genome/v6.fasta ${sample}_R1_001.fastq.gz ${sample}_R2_001.fastq.gz |
@@ -20,12 +20,34 @@ done
 gstacks -I ./  -M popmap_final -O 01_colour -t 20
 populations -P ./  -M popmap_final -O 02_populations -r 0.8 --min-maf 0.05 --ordered-export --write-random-snp -t 20
 
+##----Replicates of Fst with 100 randomly picked loci----####
+
+for (( i = 1; i<= 100;i++ ));do
+        grep -v "^#" populations.sumstats.tsv | cut -f 2,3 | sort | uniq | shuf | head -n 2 | sort -n > whitelist/w$i.tsv
+        done
+##2 extract from original vcf file and create new ones to be passed to populations
+for file in whitelist/*.tsv; do vcftools --vcf populations.snps.vcf --positions whitelist/$file --out whitelist/${file} --recode;done
+##3 perform populations across all vcf files
+for file in whitelist/*.vcf; do populations -V $file -M popmap_final_years -O 02_resampling/ --fstats -t 10; done
+
+####----Plotting Fst histogram of 100 randomly picked loci per pairwise year comparison----####
+library(ggplot2)
+p2009_2011<-read.csv("2009_2011.csv", sep = ";", header = TRUE)
+m<-mean(p2009_2011$fst)
+sd<-sd(p2009_2011$fst)
+a<-p2009_2011$fst
+ci<-m+(1.96*(sd/sqrt(100)))
+p<-ggplot(p2009_2011, aes(x=fst)) + geom_histogram(color="black", fill="darkgrey")+
+geom_vline(aes(xintercept=ci),color="red", linetype="dashed", size=1)+
+geom_vline(aes(xintercept=0.02337),color="black", linetype="dashed", size=1)+
+geom_vline(aes(xintercept=0.015316),color="green", linetype="dashed", size=1)+
+theme_classic()+  
+geom_density(alpha=.1, fill="yellow") 
+p
 
 ############################################################################
-###----------------Aligment of RADseq reads to tawny owl genome----------###
+###----------------Extracting zigosity from vcf----------###
 ############################################################################
-
-####couting/extracting heterozygotes
 #extract specific positions
 vcftools --vcf populations.snps.vcf --positions gwas --out gwas_snps --recode
 ##extract specific chromossomes --chr can be used multiple times 
@@ -37,7 +59,7 @@ vcftools --vcf contigs_3657_602.recode.vcf --keep final_individuals --max-missin
 ##make genotype matrix
 vcftools --vcf contigs_3657_602.recode.vcf --012 --out contigs_matrix
 
-##
+##count heterozigotes/homozygotes from vcf file
 paste <(bcftools view contigs_3657_602.norm.vcf |\
 awk -F"\t" 'BEGIN {print "CHR\tPOS\tID\tREF\tALT"} \
       !/^#/ {print $1"\t"$2"\t"$3"\t"$4"\t"$5}') \
@@ -61,37 +83,11 @@ awk -F"\t" 'BEGIN {print "CHR\tPOS\tID\tREF\tALT"} \
     !/^#CHROM/ {for (i=10; i<=NF; i++) {if (gsub(/0\|0|0\/0/,"", $(i))==1) {printf header[i]","}; if (i==NF) {printf "\n"}}}') \
     \
   | sed 's/,\t/\t/g' | sed 's/,$//g'
-  
 
 #coding
 #heterozygotes=0
 #homozygotes_ref=1
 #homozygotes_alt=2
-
-###----Replicates of Fst with 100 randomly picked loci----####
-
-for (( i = 1; i<= 100;i++ ));do
-        grep -v "^#" populations.sumstats.tsv | cut -f 2,3 | sort | uniq | shuf | head -n 2 | sort -n > whitelist/w$i.tsv
-        done
-##2 extract from original vcf file and create new ones to be passed to populations
-for file in whitelist/*.tsv; do vcftools --vcf populations.snps.vcf --positions whitelist/$file --out whitelist/${file} --recode;done
-##3 perform populations across all vcf files
-for file in whitelist/*.vcf; do populations -V $file -M popmap_final_years -O 02_resampling/ --fstats -t 10; done
-
-###----Plotting Fst histogram of 100 randomly picked loci per pairwise year comparison----####
-library(ggplot2)
-p2009_2011<-read.csv("2009_2011.csv", sep = ";", header = TRUE)
-m<-mean(p2009_2011$fst)
-sd<-sd(p2009_2011$fst)
-a<-p2009_2011$fst
-ci<-m+(1.96*(sd/sqrt(100)))
-p<-ggplot(p2009_2011, aes(x=fst)) + geom_histogram(color="black", fill="darkgrey")+
-geom_vline(aes(xintercept=ci),color="red", linetype="dashed", size=1)+
-geom_vline(aes(xintercept=0.02337),color="black", linetype="dashed", size=1)+
-geom_vline(aes(xintercept=0.015316),color="green", linetype="dashed", size=1)+
-theme_classic()+  
-geom_density(alpha=.1, fill="yellow") 
-p
 
 ####################################
 ##------------adegenet ----------###
@@ -197,7 +193,6 @@ w.qqplot(data = color_allele, y = color_pheno, w.order = 2, input.poolsize = 200
 w2$results
 write.csv(w2$results, file = "2nd_order_alleles")
 
-
 #####all genotypes in contigs###
 color_allcontigs<-read.csv("wtest_fullcontig.csv",header = TRUE,sep = ";")
 hf1 <- hf(data = color_allcontigs, w.order = 1, B = 400)
@@ -211,7 +206,6 @@ w1$results
 w1$results["p-value"]<- -log10(w1$results["p-value"])
 plot_genotypes<-cbind(w1$results["marker"],w1$results["p-value"])
 write.csv(plot_genotypes, file ="genotypes")
-
 
 ##2nd order interactions
 hf2<-hf(data = color_allcontigs, w.order = 2, B = 400)
