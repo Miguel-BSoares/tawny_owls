@@ -13,3 +13,36 @@ gcpp pbmm2_v5_flye/v5_flye.bam -r flye_assemblies/v5_flye_assembly.fasta -o v5_f
 
 #comparison and BUSCO
 quast.py flye_assemblies/polished/*fasta --output-dir quast_flye_polished -k -b -e -f --eukaryote --large --est-ref-size 1 --threads 4
+
+#plot BUSCO
+library(tidyverse)
+library(wesanderson)
+setwd("E:/NTFS/TURKU - CURRENT JOB/denovo_assembly/assemblies/genome/busco")
+aves_busco<-read.csv("E:/NTFS/TURKU - CURRENT JOB/denovo_assembly/assemblies/genome/busco/aves.csv", sep = ";" , header = TRUE)
+p <- ggplot(aves_busco, aes(fill= factor(Type,levels=c("Complete and single copy","Complete and duplicated","Fragmented","Missing")), y=BUSCOS, x=ï..Genome)) +
+  geom_bar(position="stack", stat="identity", color = "black") +
+  labs(y="Total",x="Genomes",fill="")+
+  scale_fill_manual(values = wes_palette("Zissou1")) +
+  ggtitle("BUSCO results for Aves database")
+p + theme_bw()+coord_flip()+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))+
+  theme(plot.title = element_text(hjust = 0.5, size = 16),
+        axis.text=element_text(size=14),
+        axis.title.y = element_text(size=14),
+        axis.title.x = element_text(size=14))
+
+         
+setwd("E:/NTFS/TURKU - CURRENT JOB/denovo_assembly/assemblies/genome/busco")
+aves_busco<-read.csv("E:/NTFS/TURKU - CURRENT JOB/denovo_assembly/assemblies/genome/busco/owls.csv", sep = ";" , header = TRUE)
+p <- ggplot(aves_busco, aes(fill= factor(Type,levels=c("Complete and single copy","Complete and duplicated","Fragmented","Missing")), y=BUSCOS, x=ï..Genome)) +
+  geom_bar(position="stack", stat="identity", color = "black") +
+  labs(y="Total",x="Genomes",fill="")+
+  scale_fill_manual(values = wes_palette("Zissou1")) +
+  ggtitle("BUSCO results for Eukaryote database")
+p + theme_bw()+coord_flip()+
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))+
+  theme(plot.title = element_text(hjust = 0.5, size = 16),
+        axis.text=element_text(size=14),
+        axis.title.y = element_text(size=14),
+        axis.title.x = element_text(size=14))
+
