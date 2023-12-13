@@ -132,6 +132,81 @@ d<-density(color_dapc$ind.coord)
 plot(d, main =" Distribution LD 1 for K = 2", xlab="coordinates of LD1")
 polygon(d, col="gainsboro", border="black") 
 
+################################
+##------------SNPrelate----------###
+################################
+#plotting and exploring PCA
+library(gdsfmt)
+library(SNPRelate)
+library(scatterplot3d)
+library(RColorBrewer)
+library(snpStats)
+library(rtracklayer)
+library(biomaRt)
+vcf.fn <- "populations.snps.vcf"
+snpgdsVCF2GDS(vcf.fn, "final2.gds", method="biallelic.only")
+snpgdsSummary("final2.gds")
+genofile <- openfn.gds("final2.gds")
+head(genofile)
+####LD prunning - find threshold of linkage desiquilibiurm##
+ld_02 <- snpgdsLDpruning(genofile, ld.threshold=0.2,autosome.only=FALSE,missing.rate=0.2)
+ld_05 <- snpgdsLDpruning(genofile, ld.threshold=0.5,autosome.only=FALSE,missing.rate=0.20)
+snpset.id <- unlist(unname(ld_05))
+####pcas and trees####
+bubu_pca <- snpgdsPCA(genofile,autosome.only=FALSE,snp.id=snpset.id)
+pc.percent <- bubu_pca$varprop*100
+pcas<-head(round(pc.percent,2))
+plot(pcas,cex=1,col="blue",pch=20, main="PC contribution", xlab="Principal Component",ylab="% variation")
+tab<-data.frame(sample.id=bubu_pca$sample.id,
+                EV1=bubu_pca$eigenvect[,1],EV2=bubu_pca$eigenvect[,2],EV3=bubu_pca$eigenvect[,3],
+                strigsAsFactors=FALSE) 
+#draw
+par(mar=c(5,5,4,4))
+plot(tab$EV2,tab$EV1,pch=20)
+#3d plot
+library(scatterplot3d)
+# shading relation to y axis
+scatterplot3d(tab$EV2,tab$EV1,tab$EV3,pch=20,grid=FALSE,tick.marks=TRUE,type="p",highlight.3d=TRUE,angle=45)
+ibs.hc <- snpgdsHCluster(snpgdsIBS(genofile, num.thread=2,autosome.only=FALSE),snp.id=snpset.id)
+rv2 <- snpgdsCutTree(ibs.hc)
+rv <- snpgdsCutTree(ibs.hc)
+plot(rv$dendrogram, leaflab="none")
+##########GROUPS#######################
+sample.id <- scan("id.txt", what=character())
+col_code <- scan("col.txt", what=character())
+fam_code <- scan("fam.txt", what=character())
+year_code <- scan("year.txt", what=character())
+tail(cbind(sample.id,col_code,fam_code,year_code))
+full_file<-cbind(sample.id,col_code,fam_code,year_code)
+##colors#
+col_years <- brewer.pal(11, "BrBG")
+col_fams <- 
+#morphs
+tab<-data.frame(sample.id=bubu_pca$sample.id,
+                col=factor(col_code)[match(bubu_pca$sample.id,sample.id)],
+                EV1=bubu_pca$eigenvect[,1],EV2=bubu_pca$eigenvect[,2],EV3=bubu_pca$eigenvect[,3],
+                strigsAsFactors=FALSE) 
+par(mar=c(5,5,4,4))
+plot(tab$EV1,tab$EV2,col=as.integer(tab$col),pch=20,ylab="PC2(2.83%)",xlab="PC1(3.30%)", main="22093 SNPs, 370 owls")
+legend("bottomleft", inset=0.05, bty="n", cex=0.75, title="Morphs", legend=levels(tab$col), col=1:nlevels(tab$col),fill = 1:nlevels(tab$col))
+#family##plotting can be adjusted
+tab<-data.frame(sample.id=bubu_pca$sample.id,
+                fam=factor(fam_code)[match(bubu_pca$sample.id,sample.id)],
+                EV1=bubu_pca$eigenvect[,1],EV2=bubu_pca$eigenvect[,2],EV3=bubu_pca$eigenvect[,3],
+                strigsAsFactors=FALSE) 
+par(mar=c(5,5,4,4))
+plot(tab$EV1,tab$EV2,col=as.integer(tab$fam),pch=20,ylab="PC2(2.83%)",xlab="PC1(3.30%)", main="22093 SNPs, 370 owls")
+legend("bottomleft", inset=0.05, bty="n", cex=0.75, title="Families", legend=levels(tab$fam), 
+       col=1:nlevels(tab$fam),fill = 1:nlevels(tab$fam))
+#year
+tab<-data.frame(sample.id=bubu_pca$sample.id,
+                year=factor(year_code)[match(bubu_pca$sample.id,
+                sample.id)],EV1=bubu_pca$eigenvect[,1],EV2=bubu_pca$eigenvect[,2],EV3=bubu_pca$eigenvect[,3],
+                strigsAsFactors=FALSE) 
+par(mar=c(5,5,4,4))
+plot(tab$EV1,tab$EV2,col=col_years,pch=20,ylab="PC2(2.83%)",xlab="PC1(3.30%)", main="22093 SNPs, 370 owls")
+legend("bottomleft", inset=0.05, bty="n", cex=0.75, title="Year", legend=levels(tab$year), col=col_years,fill = col_years)
+
 ##
 ##########################################################################################################
 ####################---------------Genome wide association analyses----------#############################
