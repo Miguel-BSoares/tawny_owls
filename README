@@ -3,3 +3,7 @@ In this repository you will find the scripts related to the manuscript "Genomic 
 Includes scripts utilized to genome assembly,completness check, polishing, assembly comparison and masking of repeated elements
 
 It also includes scripts utilized for processing of RADseq data and respective analyses
+
+Now updated to also include processing of transcriptomic data
+
+For R section of transcriptomics, visit Melanie´s https://github.com/M-Heckwolf
