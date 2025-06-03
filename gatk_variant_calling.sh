@@ -1,20 +1,17 @@
-
+### variant calling was performed with GATK pipeline ###
 ##
-#
-
 
 ## 1- RevertSam ##
 
-list="593
-594"
+list=""
 
 mkdir -p unmapped_v6_bam
 mkdir -p tmp
 
 for sample in $list
         do picard32 RevertSam \
-          -I aligned_v6/${sample}.bam \
-          -O unmapped_v6_bam/${sample}.bam \
+          -I ${sample}.bam \
+          -O ${sample}.bam \
           SANITIZE=TRUE \
           ATTRIBUTE_TO_CLEAR=XT \
           ATTRIBUTE_TO_CLEAR=XN \
@@ -46,27 +43,36 @@ done
 mkdir -p sorted_v5 
 
 for sample in $list
-
-        do picard SortSam -I merged_alignments_v5/${sample}.bam -O sorted_v5/${sample}.bam -SO coordinate
-
+        do picard SortSam \
+	-I merged_alignments_v5/${sample}.bam \
+ 	-O sorted_v5/${sample}.bam \
+  	-SO coordinate \
 done
 
-## 4 - CollectAlignmentSummaryMetrics
+## 4 - CollectAlignmentSummaryMetrics ##
+# maybe not needed #
 
 mkdir -p statistics_v5
 
 for sample in $list
-
-		do picard CollectAlignmentSummaryMetrics -I sorted_v5/${sample}.bam -R v5_genome_copy2.fasta -O statistics_v5/
-
+	do picard CollectAlignmentSummaryMetrics \
+ 		-I sorted_v5/${sample}.bam \
+  		-R v5_genome_copy2.fasta \
+    		-O statistics_v5/ \
 done
 
-## 5 - AddReadGroup
+## 5 - AddReadGroup ##
 	
-picard AddOrReplaceReadGroups -I merged_alignments_lq/${sample}.merged.bam -O replaced_readgroup/${sample}.bam  --RGID 4 --RGLB lib1 --RGPL ILLUMINA --RGPU unit1 --RGSM 20
+picard AddOrReplaceReadGroups \
+	-I merged_alignments_lq/${sample}.merged.bam \
+ 	-O replaced_readgroup/${sample}.bam  \
+  	--RGID 4 \
+   	--RGLB lib1 \
+    	--RGPL ILLUMINA \
+     	--RGPU unit1 \
+      	--RGSM 20 
 
-
-## 6 - MarkDuplicates
+## 6 - MarkDuplicates ##
 
 picard MarkDuplicates \
   --INPUT replaced_readgroup/${sample}.bam \
@@ -76,18 +82,19 @@ picard MarkDuplicates \
   --REMOVE_DUPLICATES true \
   --TMP_DIR tmp/
 
-## 7 - SplitNCigarReads 
+## 7 - SplitNCigarReads ##
+# step is necessary in transcriptomic data #
 
 gatk SplitNCigarReads \
-  -R v5_genome_copy2.fasta \
+  -R <reference> \
   -I removed_duplicates_lq/${sample}.removed.bam \
   -O splitcigar_lq/${sample}.split.bam \
   --tmp-dir tmp/
 
-### 8 - HaplotypeCaller ## CREATE INDEXED FILES
+## 8 - HaplotypeCaller ## CREATE INDEXED FILES
 
 gatk HaplotypeCaller \
-  -R v5_genome_copy2.fasta \
+  -R <reference> \
   -I splitcigar_lq/${sample}.split.bam \
   -O gvfc_aftermarkduplicates/${sample}.g.vcf.gz \
   -ERC GVCF \
@@ -97,15 +104,15 @@ gatk HaplotypeCaller \
 ## 10 - Rename VCFs ## Because readgroups add to be added for haplotype caller ##
 
 for sample in $list
-
-        do picard RenameSampleInVcf -I ${sample}.g.vcf.gz -O renamed_vcf/${sample}.g.vcf.gz --NEW_SAMPLE_NAME ${sample}
-
+        do picard RenameSampleInVcf \
+	-I ${sample}.g.vcf.gz \
+ 	-O renamed_vcf/${sample}.g.vcf.gz \
+  	--NEW_SAMPLE_NAME ${sample} 
 done
 
 ## 11 - CombineVCF - make a list ##
 
-gatk CombineGVCFs -R v5_genome_copy2.fasta \
-
+gatk CombineGVCFs -R <reference> \
 	--variant gvfc_aftermarkduplicates/12A.g.vcf.gz \
 	--variant gvfc_aftermarkduplicates/13A.g.vcf.gz \
 	--variant gvfc_aftermarkduplicates/14A.g.vcf.gz \
@@ -135,13 +142,22 @@ gatk CombineGVCFs -R v5_genome_copy2.fasta \
 	--variant gvfc_aftermarkduplicates/9A.g.vcf.gz \
 	-O combined/rna_joint.g.vcf.gz --tmp-dir tmp/
 
-## 11 - JointCall
+## 11 - JointCall ##
 
-gatk GenotypeGVCFs -R v5/v5_genome_copy2.fasta -V combined_v5/joint.g.vcf.gz -O genotype_gvcfs_final_v5/joint_v5.vcf.gz -stand-call-conf 30 --tmp-dir tmp/
+gatk GenotypeGVCFs \
+	-R v5/v5_genome_copy2.fasta \
+ 	-V combined_v5/joint.g.vcf.gz \
+  	-O genotype_gvcfs_final_v5/joint_v5.vcf.gz \
+   	-stand-call-conf 30 \
+    	--tmp-dir tmp/
 
-## 12 - Subset vcf in SNPs and Indels to be filtered independently (default/suggested parameters)
+## 12 - Subset vcf in SNPs and Indels to be filtered independently (default/suggested parameters) ##
 
-gatk SelectVariants -V joint_v5.vcf.gz -O snps_v5.vcf.gz -select-type SNP --tmp-dir tmp/
+gatk SelectVariants \
+	-V joint_v5.vcf.gz \
+ 	-O snps_v5.vcf.gz \
+  	-select-type SNP \
+   	--tmp-dir tmp/
 
 ## 13 - VariantFiltration 
 
