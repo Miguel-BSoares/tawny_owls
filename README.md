@@ -12,7 +12,7 @@ For R section of transcriptomics, visit Melanie´s https://github.com/M-Heckwolf
 
 ---
 
-## Associated resources ##
+***Associated resources***
 
 --- 
 
