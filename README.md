@@ -1,4 +1,10 @@
 :owl::owl::owl::owl::owl::owl::owl:
+:owl::owl::owl::owl::owl::owl::owl:
+
+### What can you find here ###
+
+:owl::owl::owl::owl::owl::owl::owl:
+:owl::owl::owl::owl::owl::owl::owl:
 
 In this repository you will find the scripts related to the manuscript "Genomic basis of melanin-associated phenotypes suggests colour-specific environmental adaptations in tawny owls."
 
@@ -10,11 +16,7 @@ Now updated to also include processing of transcriptomic data
 
 For R section of transcriptomics, visit Melanie´s https://github.com/M-Heckwolf
 
----
-
-***Associated resources***
-
---- 
+## Associated resources
 
 https://www.ncbi.nlm.nih.gov/bioproject/PRJNA988428/
 
