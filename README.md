@@ -1,7 +1,7 @@
 :owl::owl::owl::owl::owl::owl::owl:
 :owl::owl::owl::owl::owl::owl::owl:
 
-### What can you find here ###
+ ### What can you find here ###
 
 :owl::owl::owl::owl::owl::owl::owl:
 :owl::owl::owl::owl::owl::owl::owl:
@@ -16,7 +16,7 @@ Now updated to also include processing of transcriptomic data
 
 For R section of transcriptomics, visit Melanie´s https://github.com/M-Heckwolf
 
-## Associated resources
+## Associated resources ##
 
 https://www.ncbi.nlm.nih.gov/bioproject/PRJNA988428/
 
